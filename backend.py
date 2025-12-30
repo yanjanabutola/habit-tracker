@@ -79,7 +79,69 @@ def update_pet_health(completed, total, streak):
 
     return health
 
-if __name__ == "__main__":
-    create_tables()
-    initialize_pet()
-    print("Database and tables created successfully")
+
+def add_habit(name, category):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO habits (name, category) VALUES (?, ?)",
+        (name, category)
+    )
+
+    conn.commit()
+    conn.close()
+
+def get_all_habits():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, name, category FROM habits")
+    habits = cursor.fetchall()
+
+    conn.close()
+    return habits
+
+
+def get_habits_by_category(category):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, name FROM habits WHERE category = ?",
+        (category,)
+    )
+    habits = cursor.fetchall()
+
+    conn.close()
+    return habits
+
+def update_habit(habit_id, new_name, new_category):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "UPDATE habits SET name = ?, category = ? WHERE id = ?",
+        (new_name, new_category, habit_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+def delete_habit(habit_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM habit_log WHERE habit_id = ?",
+        (habit_id,)
+    )
+
+    cursor.execute(
+        "DELETE FROM habits WHERE id = ?",
+        (habit_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
