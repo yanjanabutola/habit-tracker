@@ -145,3 +145,92 @@ def delete_habit(habit_id):
     conn.commit()
     conn.close()
 
+def log_habit(habit_id, completed, log_date=None):
+    """
+    completed: 1 = done, 0 = not done
+    log_date: YYYY-MM-DD (default = today)
+    """
+    if log_date is None:
+        log_date = date.today().isoformat()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Check if entry already exists for this habit + date
+    cursor.execute("""
+        SELECT id FROM habit_log
+        WHERE habit_id = ? AND log_date = ?
+    """, (habit_id, log_date))
+
+    existing = cursor.fetchone()
+
+    if existing:
+        cursor.execute("""
+            UPDATE habit_log
+            SET completed = ?
+            WHERE habit_id = ? AND log_date = ?
+        """, (completed, habit_id, log_date))
+    else:
+        cursor.execute("""
+            INSERT INTO habit_log (habit_id, log_date, completed)
+            VALUES (?, ?, ?)
+        """, (habit_id, log_date, completed))
+
+    conn.commit()
+    conn.close()
+
+def get_today_completion(log_date=None):
+    if log_date is None:
+        log_date = date.today().isoformat()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM habit_log
+        WHERE log_date = ? AND completed = 1
+    """, (log_date,))
+    completed = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM habits")
+    total = cursor.fetchone()[0]
+
+    conn.close()
+    return completed, total
+
+def calculate_streak():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM habits")
+    total_habits = cursor.fetchone()[0]
+
+    if total_habits == 0:
+        conn.close()
+        return 0
+
+    streak = 0
+    current_date = date.today()
+
+    while True:
+        cursor.execute("""
+            SELECT COUNT(*) FROM habit_log
+            WHERE log_date = ? AND completed = 1
+        """, (current_date.isoformat(),))
+
+        completed = cursor.fetchone()[0]
+
+        if completed == total_habits:
+            streak += 1
+            current_date -= timedelta(days=1)
+        else:
+            break
+
+    conn.close()
+    return streak
+
+def update_health_for_today():
+    completed, total = get_today_completion()
+    streak = calculate_streak()
+    return update_pet_health(completed, total, streak)
+
