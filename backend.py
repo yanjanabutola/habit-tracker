@@ -234,3 +234,80 @@ def update_health_for_today():
     streak = calculate_streak()
     return update_pet_health(completed, total, streak)
 
+def get_week_date_range(year, month, week_number):
+    """
+    week_number: 1 to 4
+    """
+    start_day = (week_number - 1) * 7 + 1
+    start_date = date(year, month, start_day)
+    end_date = start_date + timedelta(days=6)
+    return start_date, end_date
+
+def get_weekly_stats(year, month, week_number):
+    start_date, end_date = get_week_date_range(year, month, week_number)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM habits")
+    total_habits = cursor.fetchone()[0]
+
+    if total_habits == 0:
+        conn.close()
+        return 0
+
+    total_days = 0
+    completed_days = 0
+
+    current = start_date
+    while current <= end_date:
+        cursor.execute("""
+            SELECT COUNT(*) FROM habit_log
+            WHERE log_date = ? AND completed = 1
+        """, (current.isoformat(),))
+        completed = cursor.fetchone()[0]
+
+        if completed == total_habits:
+            completed_days += 1
+
+        total_days += 1
+        current += timedelta(days=1)
+
+    conn.close()
+
+    return round((completed_days / total_days) * 100, 2)
+
+def get_monthly_stats(year, month):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM habits")
+    total_habits = cursor.fetchone()[0]
+
+    if total_habits == 0:
+        conn.close()
+        return 0
+
+    cursor.execute("""
+        SELECT COUNT(DISTINCT log_date)
+        FROM habit_log
+        WHERE completed = 1
+        AND strftime('%Y', log_date) = ?
+        AND strftime('%m', log_date) = ?
+    """, (str(year), f"{month:02d}"))
+
+    completed_days = cursor.fetchone()[0]
+
+    # Approx days in month (good enough for project)
+    days_in_month = 28 if month == 2 else 30
+
+    conn.close()
+
+    return round((completed_days / days_in_month) * 100, 2)
+
+if __name__ == "__main__":
+    create_tables()
+    initialize_pet()
+
+    # optional quick test
+    print("Backend ready")
