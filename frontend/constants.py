@@ -1,18 +1,26 @@
 # Window
 WINDOW_WIDTH = 420
 WINDOW_HEIGHT = 780
-APP_TITLE = "Habit Tracker - HabiPet 🐾"
+APP_TITLE = "Habit Tracker - HabiPet"
 
-# Pets
-PETS = ["cat", "dog", "dino", "owl", "rhino"]
+# Pets (name -> image file)
+PETS = {
+    "cat": "cat.png",
+    "dog": "dog.png",
+    "dino": "dino.png",
+    "owl": "owl.png",
+    "rhino": "rhino.png"
+}
+
 PET_IMAGE_SIZE = (150, 150)
 
-# Health
+# Health system
 MAX_HEALTH = 100
-HEALTH_LEVELS = {
-    "Healthy": 70,
-    "Weak": 40,
-    "Critical": 0
+
+# Thresholds (>= healthy, >= weak, else critical)
+HEALTH_THRESHOLDS = {
+    "healthy": 70,
+    "weak": 40
 }
 
 # Week
